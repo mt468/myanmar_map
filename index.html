@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Myanmar Admin Explorer</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/leaflet.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="loading"><div class="spin"></div><div>Initialising geospatial layers…</div></div>
+<div id="app">
+<header>
+  <h1>Myanmar Admin Explorer<small>Geospatial Intelligence · MIMU P-code v9.4</small></h1>
+  <span class="live"><i></i><span id="clock">MMT</span></span>
+  <div id="searchWrap">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" placeholder="Search state, district, township, village tract, village, ward, town — English, မြန်မာ or P-code" autocomplete="off">
+    <div id="results"></div>
+  </div>
+  <div class="hdrtools">
+    <button id="locBtn" title="Go to a latitude / longitude"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" style="vertical-align:-2px;margin-right:4px"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Lat / Long</button>
+    <label style="font-size:12px;opacity:.8">Labels</label>
+    <select id="lang" title="Label language"><option value="en">English</option><option value="mm">မြန်မာ</option><option value="both">Both</option><option value="none">Off</option></select>
+    <button id="layBtn" title="Extra data layers"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" style="vertical-align:-2px;margin-right:4px"><path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/></svg>Layers</button>
+    <button id="fillBtn" title="Turn polygon fill colours on / off (boundary lines stay)"><span id="fillSw" style="display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px;background:linear-gradient(135deg,#4e79a7 50%,#f28e2b 50%);border:1px solid #fff"></span>Fill: <b id="fillTxt">On</b></button>
+    <select id="base" title="Background map">
+      <option value="none">No basemap (offline)</option>
+      <optgroup label="Dark — no key needed"><option value="esridark">Dark gray (Esri)</option><option value="nightstreet">Night streets (filtered)</option><option value="nightsat">Night satellite (dimmed)</option></optgroup>
+      <optgroup label="Standard — no key needed"><option value="street">Street map (Esri)</option><option value="topo">Terrain (Esri)</option><option value="sat">Satellite (Esri)</option></optgroup>
+      <optgroup label="Needs API key (⚙)"><option value="mt_dark">MapTiler Dark</option><option value="mt_sat">MapTiler Satellite</option><option value="mb_dark">Mapbox Dark</option><option value="mb_sat">Mapbox Satellite streets</option><option value="st_dark">Stadia Alidade Dark</option><option value="custom">Custom tile URL</option></optgroup>
+    </select>
+    <button id="baseCfg" title="Basemap API keys / custom tile URL" style="width:34px;padding:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:-2px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+  </div>
+</header>
+<main>
+  <aside>
+    <div id="crumbs"></div>
+    <div id="card"></div>
+    <div id="listHead"><b id="listTitle"></b><input id="lf" placeholder="Filter list…"></div>
+    <div id="tabs"></div>
+    <div id="list"></div>
+  </aside>
+  <div id="mapWrap"><div id="map"></div><div id="legend"></div><div id="coord"></div></div>
+</main>
+</div>
+<div id="toast"></div>
+<div id="layPop">
+  <!-- Every layer: tick = on/off · ▾ = filters · dropdowns for single choices · tick lists to hide/show -->
+  <div class="lsec">
+    <div class="lyHead"><h3>Map layers</h3><button class="lyx" data-x="mvBox" title="Show / hide">▾</button></div>
+    <div id="mvBox" class="lyOpts open">
+      <label class="tk"><input type="checkbox" data-mv="vt"><span class="sw"><i class="swp" style="border:1.5px solid #6f98ab"></i></span><span class="tkl">Village tract boundaries</span></label>
+      <label class="tk"><input type="checkbox" data-mv="village"><span class="sw"><i class="swd" style="background:#ff6b6b"></i></span><span class="tkl">Villages</span></label>
+      <label class="tk"><input type="checkbox" data-mv="town"><span class="sw"><i class="swd" style="background:#e2e8f0"></i></span><span class="tkl">Towns</span></label>
+      <label class="tk"><input type="checkbox" data-mv="ward"><span class="sw"><i class="swp" style="background:#3b5566"></i></span><span class="tkl">Urban wards</span></label>
+      <label class="tk"><input type="checkbox" data-mv="ctx"><span class="sw"><i class="swp" style="background:#0c1822;border:1px solid #3b5566"></i></span><span class="tkl">Neighbouring areas</span></label>
+    </div>
+  </div>
+  <div class="lsec">
+    <div class="lyHead"><h3>Reference layers</h3><button class="lyx" data-x="refBox" title="Show / hide">▾</button></div>
+    <div id="refBox" class="lyOpts open"></div>
+  </div>
+  <div class="lsec">
+    <div class="lyHead"><h3>Data layers</h3><button class="lyx" data-x="dataBox" title="Show / hide">▾</button></div>
+    <div id="dataBox" class="lyOpts open">
+      <div class="lyr">
+        <div class="lyHead"><label class="tk head"><input type="checkbox" id="lyStates" checked><span class="sw"><i class="swp" style="background:linear-gradient(135deg,#1f6f8b 50%,#7a4f1d 50%)"></i></span><span class="tkl">MIMU State / Regions</span><span class="n" id="lyStatesN"></span></label><button class="lyx" data-x="lyStatesOpts" title="Filters">▾</button></div>
+        <div id="lyStatesOpts" class="lyOpts body">
+          <div class="dd"><span>State / Region</span><select id="lsSt"></select></div>
+        </div>
+      </div>
+      <div class="lyr">
+        <div class="lyHead"><label class="tk head"><input type="checkbox" id="lyBorder" checked><span class="sw"><svg width="12" height="12" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" fill="#22c55e" stroke="#05090d" stroke-width="2"/></svg></span><span class="tkl" id="lyBorderName">Border Trade Towns &amp; Ports</span><span class="n" id="lyBorderN"></span></label><button class="lyx" data-x="lyBorderOpts" title="Filters">▾</button></div>
+        <div id="lyBorderOpts" class="lyOpts body">
+          <div class="dd"><span>State / Region</span><select id="lySt"></select></div>
+          <div class="dd"><span>Colour by</span><select id="lyColor"><option value="status">Status (weekly)</option><option value="ctl">Controlled by</option><option value="cat">Category</option></select></div>
+          <div class="dd"><span>Week</span><select id="lyWeek"></select></div>
+          <div id="lyTicks"></div>
+          <div class="acts"><button class="btn" id="lyList">List points</button><button class="btn" id="lyCsv">Export CSV</button></div>
+          <div class="src" id="lySrc"></div>
+        </div>
+      </div>
+      <div class="lyr" id="lyTownsBox" style="display:none">
+        <div class="lyHead"><label class="tk head"><input type="checkbox" id="lyTowns"><span class="sw"><svg width="12" height="12" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="13" height="13" rx="2" fill="#f5a524" stroke="#05090d" stroke-width="2"/></svg></span><span class="tkl" id="lyTownsName">Town Control / Capture</span><span class="n" id="lyTownsN"></span></label><button class="lyx" data-x="lyTownsOpts" title="Filters">▾</button></div>
+        <div id="lyTownsOpts" class="lyOpts body">
+          <div class="dd"><span>State / Region</span><select id="ltSt"></select></div>
+          <div class="dd"><span>Colour by</span><select id="ltColor"><option value="s">Status</option><option value="a">Controlled by</option></select></div>
+          <div id="ltTicks"></div>
+          <div class="acts"><button class="btn" id="ltList">List towns</button><button class="btn" id="ltCsv">Export CSV</button></div>
+          <div class="src" id="ltSrc"></div>
+        </div>
+      </div>
+      <div class="lyr" id="lyUnitsBox" style="display:none">
+        <div class="lyHead"><label class="tk head"><input type="checkbox" id="lyUnits"><span class="sw"><svg width="12" height="12" viewBox="0 0 18 18"><path d="M9 1.5 L16.5 16 L1.5 16Z" fill="#e11d1d"/></svg></span><span class="tkl" id="lyUnitsName">Military Units</span><span class="n" id="lyUnitsN"></span></label><button class="lyx" data-x="lyUnitsOpts" title="Filters">▾</button></div>
+        <div id="lyUnitsOpts" class="lyOpts body">
+          <div class="dd"><span>State / Region</span><select id="luSt"></select></div>
+          <div class="dd"><span>Command</span><select id="luHq"></select></div>
+          <div id="luTicks"></div>
+          <div class="acts"><button class="btn" id="luList">List units</button><button class="btn" id="luCsv">Export CSV</button></div>
+          <div class="src" id="luSrc"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="keyPop" class="pop">
+  <h3>Basemap API keys</h3>
+  <div class="hint" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Keys are saved only in this browser (not inside the file). Free keys: <a href="https://cloud.maptiler.com/account/keys/" target="_blank" rel="noopener">MapTiler</a> · <a href="https://account.mapbox.com/access-tokens/" target="_blank" rel="noopener">Mapbox</a> · <a href="https://client.stadiamaps.com/" target="_blank" rel="noopener">Stadia</a>. On a website, restrict each key to your domain.</div>
+  <label>MapTiler key</label><input id="kMt" placeholder="e.g. AbCdEf123…" autocomplete="off">
+  <label>Mapbox access token</label><input id="kMb" placeholder="pk.eyJ1…" autocomplete="off">
+  <label>Stadia Maps API key</label><input id="kSt" placeholder="xxxxxxxx-xxxx-…" autocomplete="off">
+  <label>Custom XYZ tile URL</label><input id="kCu" placeholder="https://…/{z}/{x}/{y}.png?key=…" autocomplete="off">
+  <label>Custom attribution</label><input id="kCa" placeholder="© Provider" autocomplete="off">
+  <label style="display:flex;align-items:center;gap:8px;margin-top:8px"><input type="checkbox" id="kLbl" style="width:auto;height:auto"> Add place-name overlay on satellite / dark gray</label>
+  <div class="err" id="kErr"></div>
+  <div style="display:flex;gap:6px;margin-top:6px"><button class="btn pri" id="kSave">Save &amp; apply</button><button class="btn" id="kClear">Clear keys</button></div>
+</div>
+<div id="locPop">
+  <h3>Locate by coordinates</h3>
+  <div class="g"><div><label>Latitude (N)</label><input id="inLat" placeholder="16.8053"></div><div><label>Longitude (E)</label><input id="inLon" placeholder="96.1561"></div></div>
+  <div class="hint">Or paste into either box: <code>16.8053, 96.1561</code> · <code>16°48'19"N 96°9'22"E</code> · <code>16 48 19 N 96 9 22 E</code>. Lat/long order is auto-detected.</div>
+  <div class="err" id="locErr"></div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn pri" id="locGo">Locate</button><button class="btn" id="locPick">Pick on map</button><button class="btn" id="locBatch">Batch lookup…</button></div>
+</div>
+<div id="modal"><div class="box">
+  <div class="hd"><b>Batch coordinate lookup</b><button class="x" id="mClose">×</button></div>
+  <div class="bd">
+    <div style="font-size:12.5px;color:var(--muted);margin-bottom:6px">Paste rows from Excel / CSV. Either <code>lat, long</code> per line, <code>ID, lat, long</code>, or a table with a header row containing <b>lat/latitude/y</b> and <b>lon/long/longitude/x</b> columns (other columns are kept). Each point gets State, District, Township, Village Tract / Town, Ward, P-codes and the nearest village.</div>
+    <textarea id="bIn" placeholder="ID&#9;Latitude&#9;Longitude&#10;A1&#9;16.8053&#9;96.1561&#10;A2&#9;21.9588&#9;96.0891"></textarea>
+    <div style="display:flex;gap:6px;margin-top:8px;align-items:center"><button class="btn pri" id="bRun">Look up</button><button class="btn" id="bCsv" disabled>Download CSV</button><button class="btn" id="bMap" disabled>Show on map</button><span id="bMsg" style="font-size:12.5px;color:var(--muted)"></span></div>
+    <div id="bOut" style="overflow:auto;max-height:45vh"></div>
+  </div>
+</div></div>
+
+<script src="lib.js"></script>
+
+
+<script src="js/00-core.js"></script>
+<script src="js/01-search.js"></script>
+<script src="js/02-map.js"></script>
+<script src="js/03-views.js"></script>
+<script src="js/04-layers-panel.js"></script>
+<script src="js/05-sidebar.js"></script>
+<script src="js/06-layer-border.js"></script>
+<script src="js/07-layer-units.js"></script>
+<script src="js/08-layer-towns.js"></script>
+<script src="js/09-layer-ref.js"></script>
+<script src="js/10-basemaps.js"></script>
+<script src="js/11-coordinates.js"></script>
+</body>
+</html>
