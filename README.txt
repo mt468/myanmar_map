@@ -7,9 +7,11 @@ IMPORTANT: it must be opened through a web address (http/https).
 Double-clicking index.html on your computer will NOT load the data - use the
 offline file Myanmar_Admin_Explorer.html for that.
 
-Embed in another page:
-  <iframe src="https://YOUR-SITE/myanmar-map/index.html" width="100%" height="700"
-          style="border:0" allowfullscreen></iframe>
+Embed in another page (live copy: https://mt468.github.io/myanmar_map/):
+  <iframe src="https://mt468.github.io/myanmar_map/" width="100%" height="700"
+          style="border:0" allow="fullscreen" allowfullscreen></iframe>
+  The ⛶ button (top right) makes the map full screen. Keep allow="fullscreen" in the
+  iframe - without it (or on iPhone) the button opens the map in a new tab instead.
 
 Deep links: index.html#MMR013 (area by P-code), #BT29 (border point),
             #MU320 (military unit), #TC042 (town control), #@16.8053,96.1561 (coordinate)

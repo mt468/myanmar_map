@@ -114,3 +114,22 @@ function townMarkers(list){
     const tt=lbl(t);if(tt){m.bindTooltip(tt,{permanent:true,direction:'top',offset:[0,-4],className:'lbl'});labelLayers.push([m,0]);}
     ptLayer.addLayer(m);});
 }
+
+/* full screen: whole app; when embedded in an iframe without allow="fullscreen" (or on iPhone), open in a new tab instead */
+const EMBEDDED=(()=>{try{return window.self!==window.top;}catch(e){return true;}})();
+const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement;
+const fsOK=()=>!!(document.fullscreenEnabled||document.webkitFullscreenEnabled);
+function toggleFullscreen(){
+  if(fsOK()){const d=document.documentElement;
+    if(fsEl())(document.exitFullscreen||document.webkitExitFullscreen).call(document);
+    else (d.requestFullscreen||d.webkitRequestFullscreen).call(d);return;}
+  if(EMBEDDED){window.open(location.href,'_blank','noopener');toast('Opened the map in a new tab');}
+}
+function fsSync(){const on=!!fsEl();
+  $('#fsIco').setAttribute('d',on?'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5':'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5');
+  $('#fsBtn').title=on?'Exit full screen (Esc)':fsOK()?'Full screen':'Open the map in a new tab';
+  if(map)setTimeout(()=>map.invalidateSize(),100);}
+$('#fsBtn').onclick=toggleFullscreen;
+document.addEventListener('fullscreenchange',fsSync);document.addEventListener('webkitfullscreenchange',fsSync);
+if(!fsOK()&&!EMBEDDED)$('#fsBtn').style.display='none'; // e.g. iPhone Safari, not embedded: nothing useful to do
+fsSync();
